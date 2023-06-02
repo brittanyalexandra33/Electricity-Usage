@@ -102,3 +102,82 @@ table(cluster, acorndata$Group)
 cutree(powerComplete, k =4) -> clustervec
 clustervec
 ```
+Dendrogram Groups and Socioeconomic Groups:
+
+Cluster 1 appears to have a higher representation of the "Adversity" socioeconomic group.
+Cluster 2 has a relatively balanced representation across all three socioeconomic groups, with the highest being Affluent.
+Cluster 3 shows a higher representation of the "Adversity" socioeconomic group.
+Cluster 4 is primarily associated with the "Adversity" socioeconomic group.
+
+Our two smaller clusters; Cluster 1 and Cluster 4, are just from one socioeconomic class. Cluster 1 is a cluster of three Affluent groups, while cluster four is a cluster of two Adverse groups. 
+Therefore there is a strong association between Cluster 1 and Affluent socioeconomic groups, and a strong association be Cluster 4 and Adverse socioeconomic groups.
+
+Cluster 2 and 3 have a mixture of socioeconomic groups, with cluster 2 being relatively evenly distributed across Adverse, Affluent, and Comfortable. In contrast, 57% (8/14) of the groups in cluster 3 are from the Adverse socioeconomic groups, 35% are groups of Comfortable socioeconomic groups, while only 7% (1/14) of the cluster contains Affuent groups. Thereby indicating Cluster 3 is more representative of Adverse socioeconomic group and there is a weak relationship.
+
+
+
+Dendrogram Groups and Tariff Types:
+
+Cluster 1 shows a higher representation of the "Affluent" tariff type.
+Cluster 2 has a relatively balanced representation across all three tariff types.
+Cluster 3 shows a higher representation of the "Adversity" tariff type.
+Cluster 4 is primarily associated with the "Std" tariff type.
+
+Cluster 4 is evenly distributed across the Standard / Time of Use Tariffs.
+Cluster 1,2, and 3 display a slight bias in the groups. Cluster 1 has one group of of Standard Tariffs, and two groups of Time of Use Tariffs; although this is a small discrepancy, that is 50% of of the ToU Tariff. This indicates a weak association with the Tou Tariff.
+Similarly, Cluster 2 has 10 groups of the Standard Tariff, while the Time of Use Tariff contains 50% of that with 5 groups indicating a moderate association with Std Tariff. Although its not super pronounced, if it really had nothing to do with the type, we'd expect it to be equally distributed across the clusters. 
+Cluster 3 has 9 groups of the Time of Use Tariff, and 5 groups of the Standard Tariff, indicating a moderate association with the ToU Tariff.
+
+#### Q3. Do a permanova based on the euclidian distance
+
+> What are your conclusions?
+
+```{r}
+mod2 <- adonis(comfdata[,5:52]~comfdata[,4], permutations = 999, method = "euc")
+mod2$aov.tab
+```
+We have no evidence to reject the null hypothesis that the multivariate means are the same, evident by our mildly large P-value of 0.092 (JUST large enough to reject null hypothesis). This means that throughout the time course through the day of when households in this sample are using the power, there is no difference in power usage. This could be attributed to a lack of shift in people's behavior, or a lack of peak/off-peak times.
+
+#### Q4.
+
+> Perform k-means clustering of the profiles from the comfortable households. Make graphs of the within group sum of squares, and the C-H index. Select a number of clusters, referring to featrues of the plots to justify your choice. Create tables of the cluster memberships and the detailed acorn categories, and of the cluster memberships and tariff. Are there any associations? Assess qualitatively; a chi-squared test would be appropriate here, but you need not perform one.
+
+```{r}
+comfort1 <- comfdata[,5:52]
+kmod <- kmeans(comfort1, centers = 3, nstart=5)
+names(kmod)
+
+#Number of clusters
+WSS<-rep(NA,10)
+for(i in 2:10){
+WSS[i-1]<-kmeans(comfort1, centers=i, nstart=5)$tot.withinss
+}
+plot(2:11, WSS, xlab="Number of Clusters")
+
+#C-H index vs within
+CH <- rep(NA, 9) 
+for(i in 2:10){kmod<-kmeans(comfort1, centers = i, nstart = 10) 
+CH[i-1]<-(kmod$betweenss/(i-1))/(kmod$tot.withinss/(nrow(comfort1)-i))}
+plot(2:10,CH, xlab= "Cluster number", ylab="C-H index", main = "C-H index vs within ")
+
+kmod_chosen <- kmeans(comfort1, centers = 2, nstart = 10)
+
+table(as.vector(kmod_chosen$cluster), as.vector(comfdata$ACORN))
+table(as.vector(kmod_chosen$cluster), as.vector(comfdata$TARIFF))
+
+cluster_tariff_table <- table(as.vector(kmod_chosen$cluster), as.vector(comfdata$TARIFF))
+chisq.test(cluster_tariff_table)
+
+```
+Judging the CH index by the elbow-rule, we can see that the value of K that maximizes the Silhouette coefficient of the CH index is 6. This aims to form well-separated and compact clusters. 
+
+Cluster Memberships and Detailed Acorn Categories:
+Cluster 1 has a higher representation of households in the ACORN-F and ACORN-H categories, while Cluster 2 has a higher representation of households in the ACORN-G category.
+The distribution of households across the other detailed acorn categories (ACORN-I and ACORN-J) is relatively smaller in both clusters.
+
+Cluster Memberships and Tariff:
+Cluster 1 has a higher proportion of households with the Standard (Std) tariff, while Cluster 2 has a higher proportion of households with the Time of Use (ToU) tariff.
+
+However, from the Chisq test we have a insignificant P-value of 0.099 indicating the observed data is likely to have occurred from chance alone. We fail to reject the null hypothesis and conclude that there is no significant association or difference between the clusters in the Tariff and Acorn Groups based on the available evidence.
+Based on these observations, there does not appear to be an association between cluster memberships and both the detailed Acorn categories and the Tariff. 
+
