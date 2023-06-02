@@ -1,0 +1,104 @@
+
+```{r setup, include=FALSE}
+
+#Information on factors, and average total daily use
+acorndata <- read.csv("~/Documents/STATS302 [Documents]/Assignment 4/AcornInfo-1-1.csv")
+
+#Closer examination of the comfortable data 
+comfdata <- read.csv("~/Documents/STATS302 [Documents]/Assignment 4/comfortable-1.csv")
+
+load("~/Documents/STATS302 [Documents]/Assignment 4/powerDist-1.RData")
+```
+
+#### Q1. Create a metric multdimensional scaling.
+
+> Using the distance matrix in powerDist-1.RData, create a metric multdimensional scaling. Plot using symbols/colors to represent Tariff and Group (the 3-level variable aggregating the acorn categories---these are in AcornInfo-1-1.csv). Make a second plot showing total use as bubble size, using color to represent Group. Summarize any trends or interesting features in these two plots.
+
+> Plot using symbols/colors to represent Tariff and Group (the 3-level variable aggregating the acorn categories).
+
+> Make a second plot showing total use as bubble size, using color to represent Group.
+
+> Summarize any trends or interesting features in these two plots.
+
+> What is the goodness of fit statistic from the mds? What can you tell from the fact the two goodness of fit measurements are the same? What does this statistic say about the adequacy of the representation?
+
+```{r, fig.height = 6}
+#Metric MDS with Bray Curtis with colours/symbols to represent Tarrif 
+acorn.cmds <- cmdscale(powerDist,k=2, eig=TRUE)
+
+plot(acorn.cmds$points, 
+     pch = substring(acorndata$Tariff, 1, 1),
+     main="Metric MDS with Bray-Curtis Distance", 
+     xlab="", 
+     ylab='',
+     col = factor(acorndata$Group))
+legend("topright", levels(factor(acorndata$Tariff)), pch = c("S", "T"), col = 1)
+legend("topleft", levels(factor(acorndata$Group)), col = 1:3, pch = 1)
+
+#Goodness of fit 
+acorn.cmds$GOF
+
+#Bubble plot with colour representing group
+##non jmetric mds
+symbols(acorn.cmds$points, circles= acorndata$TotalUse,
+        xlab="non-metric axis 1", 
+        ylab='non-metric axis 2',
+        fg = as.factor(acorndata$Group),
+        main="Bubble Plot")
+legend("topleft", pch=1, pt.cex=2, legend="Radius proportional to Time of Use")
+legend("topright", levels(factor(acorndata$Group)), col = 1:3, pch = 1)
+```
+We can see that the two GOF measures are the same at 0.9753842, indicating that most of the variability is represented in this plot as our goodness of fit test stat is close to 1. 97.5% of the variability of our data is represented.
+The fact that the goodness of fit statistics are identical suggests that the model is performing consistently well across different aspects or dimensions of the data. It indicates that the model is able to capture the overall variability and patterns present in the data in a similar manner.
+The similarity between the two goodness of fit measurements can be attributed to the positive eigenvalues and the use of Euclidean distance in the analysis. The method employed aims to align the visual space with the distance matrix, and since the distance matrix consists of Euclidean distances, we can deduce that by employing a sufficiently high-dimensional space, we can accurately represent the data.
+
+
+SYMBOL/COLOUR  PLOT
+The Adverse group is distributed across the left to center of the x-axis, with a mixture of Standard and ToU Tariff's. 
+The Affluent group is distributed across the right to the center of the X axis, with a mixture of Standard and ToU Tariff's.
+The Comfortable group is distributed around the middle of the X-axis around zero, with a mixture of Standard and ToU Tariff's.
+This could suggest that there is no/weak relationship between Tariff type and clustering trends, as socioeconomic groups are not dependent on the Tariff type. 
+Each socioeconomic group has an outlier represented by the Standard Tariff, which is worth investigating further. 
+
+BUBBLE PLOT
+The MDS plot reveals a cluster of Adverse, Comfortable, and Affluent socioeconomic groups positioned around the center. These groups are represented by bubbles of approximately equal size, suggesting a relative similarity to other groups in the MDS space.
+
+The Affluent group shows a greater dispersion towards the right side of the X-axis. The bubbles representing this group increase in size as they move further along the X-axis, indicating higher values of Total Use. The Affluent group exhibits a trend of increasing usage as it progresses from 0 to 1.5 along the non-metric X-axis.
+
+The Adverse group is centered around the middle of the non-metric X-axis at 0, with a slight dispersion towards the left at -1. Bubbles positioned around zero have larger radii compared to those distributed to the left, suggesting that the Adverse group has higher Total Usage along the negative X-axis. However, there is one outlier bubble that appears to be positioned higher to the left.
+
+The Comfortable group is also centered around the middle of the non-metric X-axis at 0, with a slight dispersion towards a higher position along the Y-axis at 0.4. However, there seems to be only one bubble at this particular Y-axis height. The bubbles representing the Comfortable group are generally similar in size, indicating similar levels of total usage.
+
+
+##### Q2. Create a dendrogram using complete linkage.
+
+> Plot the dendrogram, labeling the leaves with the category they represent.
+
+> Cut the dendrogram so four groups are created--show this on the plot.
+
+> Make a table of these four groups and the three aggregated socio economic groups, and a separate table of the dendrogram groups and electricity tariff types.
+
+> Are the dendrogram groups associated with either the socio economic group or tariff? Do not perform a test, but summarize any trends in your› tables.
+
+```{r, fig.height = 6}
+#Hierachel clusterting
+# Labeling the leaves with what they represent
+# Cut the dendrogram so four groups are created–show this on the plot. 
+hclust(powerDist)->powerComplete #default is complete linkage
+plot(powerComplete, hang = -1,
+     main = "Complete Linkage Clustering of Power Distances",
+     ylab = "Pairwise distances",
+     xlab = "PowerDist")
+rect.hclust(powerComplete, k=4)
+
+# Make a table of the dendrogram groups and electricity tariff types
+cluster <- cutree(powerComplete, k = 4)
+table(cluster, acorndata$Tariff)
+
+# Create a table of the four groups and the three aggregated socio-economic groups
+table(cluster, acorndata$Group)
+
+#tells us what each of the groups belong to
+cutree(powerComplete, k =4) -> clustervec
+clustervec
+```
